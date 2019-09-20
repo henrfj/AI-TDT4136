@@ -89,6 +89,8 @@ def a_star(board, start, end):
 
         # Adds the child to the parents child-list
         for child in children:
+            # The tile cost is the g cost of the current child, it is found on the board
+            tile_cost = board[child.position[0]][child.position[1]]
 
             # Checks if the child has previously been created, and therefor is either in open or closed nodes
             # if it is, we rather look at the old version and update it
@@ -104,14 +106,14 @@ def a_star(board, start, end):
 
             if child not in open_nodes and child not in closed_nodes:
                 # It has not yet been evaluated, and we don't need to propagate it
-                attach_and_eval(child, current_node, end)
+                attach_and_eval(child, current_node, end, tile_cost)
                 open_nodes.append(child)
                 open_nodes.sort()
 
-            elif current_node.g + 1 < child.g:  # (found cheaper path to S):
+            elif current_node.g + tile_cost < child.g:  # (found cheaper path to the child):
                 # ∗ attach-and-eval(S,X)
                 # ∗ If S ∈ CLOSED then propagate-path-improvements(S)
-                attach_and_eval(child, current_node, end)
+                attach_and_eval(child, current_node, end, tile_cost)
                 if child in closed_nodes:
                     propagate_path_improvements(child)
 
@@ -123,11 +125,15 @@ def heuristic_function(node, goal):
     return abs(node[0] - goal[0]) + abs(node[1] - goal[1])
 
 
-def attach_and_eval(child, parent, end):
+def attach_and_eval(child, parent, end, tile_cost):
     """Attaches a node to its best parent (so far)
     the child's g'value is computed based on parent, h independently"""
     child.best_parent = parent
-    child.g = parent.g + 1
+    child.g = parent.g + tile_cost
+
+    if tile_cost == -1:
+        raise Exception("Something is wrong here")
+
     child.h = heuristic_function(child.position, end)
 
 
