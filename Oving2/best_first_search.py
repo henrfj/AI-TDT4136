@@ -1,5 +1,6 @@
 """A* algorithm and some problems to be solved by it.
-I used the pseudo-code of 'Essentials of the A* algorithm' published on blackboard"""
+I used the pseudo-code of 'Essentials of the A* algorithm' published on blackboard
+The Map module is the hand-out module for generating and displaying maps"""
 import Map as m 
 
 __author__ = "Henrik Fjellheim"
@@ -130,10 +131,6 @@ def attach_and_eval(child, parent, end, tile_cost):
     the child's g'value is computed based on parent, h independently"""
     child.best_parent = parent
     child.g = parent.g + tile_cost
-
-    if tile_cost == -1:
-        raise Exception("Something is wrong here")
-
     child.h = heuristic_function(child.position, end)
 
 
@@ -163,7 +160,7 @@ def main():
     board = m.Map_Obj(task)
     map1, map2 = board.get_maps()
     board.show_map()
-    print(map1)
+    # print(map1)
     # print(map2)
 
     tuple_start = (board.get_start_pos()[0], board.get_start_pos()[1])
