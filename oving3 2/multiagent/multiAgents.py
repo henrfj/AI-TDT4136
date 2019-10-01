@@ -101,8 +101,8 @@ class MultiAgentSearchAgent(Agent):
       is another abstract class.
     """
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
-        self.index = 0 # Pacman is always agent index 0
+    def __init__(self, evalFn = 'scoreEvaluationFunction', depth='2'):
+        self.index = 0  # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
 
@@ -129,7 +129,52 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def max_value(game_state, depth):
+            """:return A utility value used to get the action"""
+            if terminal_test(game_state):
+                return self.evaluationFunction(game_state)
+            v = - float('inf')
+
+            for _action in game_state.getLegalActions(self.index):
+                v = max(v, min_value(result(game_state, _action)), depth, game_state.getNumAgents())
+            return v
+
+        def min_value(game_state, depth, ghosts):
+            """:return a utility value used to get the action"""
+            if terminal_test(game_state):
+                return self.evaluationFunction(game_state)
+            v = float('inf')
+
+            # To cope with many enemies---------
+
+            if ghosts != 0:
+                for _action in game_state.getLegalActions(ghosts):
+                    v = min(v, min_value(result(game_state, _action), depth, ghosts-1))
+            else:
+                for _action in game_state.getLegalActions():
+                    v = min(v, max_value(result(game_state, _action), depth-1))
+
+            return v
+
+        def terminal_test(game_state):
+            """:return True if we are at a leaf, False otherwise"""
+            if game_state.getLegalActions(self.index) == 0:
+                return True
+            return False
+
+        def result(game_state, action):
+            return game_state.generateSuccessor(self.index, action)
+
+        best_score = -float('inf')
+        best_index = 0
+        action_table = gameState.getLegalActions(self.index)
+        for i, action in enumerate(action_table):
+            utility = min_value(result(gameState, action), self.depth, gameState.getNumAgents()-1)
+            if utility > best_score:
+                best_score = utility
+                best_index = i
+        return action_table[best_index]
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
