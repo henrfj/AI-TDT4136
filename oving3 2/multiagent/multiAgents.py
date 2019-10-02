@@ -215,7 +215,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         action_table = gameState.getLegalActions(self.index)
 
         for i, action in enumerate(action_table):
-            # game_state.getNumAgents() -1 will give the number of ghosts
+            # input integer 1 below represent ghost index. We first evaluate ghost at index 1
             utility = min_value(result(gameState, action, self.index), self.depth, 1)
             if utility > best_score:
                 best_score = utility
