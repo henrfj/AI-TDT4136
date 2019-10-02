@@ -149,34 +149,35 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return self.evaluationFunction(game_state)
             v = float('inf')
 
-            # TODO: Should we use "min" function in both situations underneath?
+            # TODO: Should we use "min" function in both situations underneath? => yes
             # TODO: How does the "getLegalAction" work with ghosts?
-            # TODO: FIX RESULT FUNCTION! IS ALWAYS SELF-INDEXED
+            # TODO: FIX RESULT FUNCTION! IS ALWAYS SELF-INDEXED => Done
             # TODO: How does "generateSuccessor" work with ghosts?
 
-            if num_ghosts != 0:
+            if num_ghosts > 1:  # CHANGED FROM 0 to 1 02.10.2019, 08:54 (RIP)
                 for _action in game_state.getLegalActions(num_ghosts):
                     v = min(v, min_value(result(game_state, _action, num_ghosts), depth, (num_ghosts - 1)))
             else:
-                for _action in game_state.getLegalActions():
-                    v = min(v, max_value(result(game_state, _action, self.index), depth-1))
-
+                for _action in game_state.getLegalActions(num_ghosts):  # num_ghost is always 1 here
+                    v = min(v, max_value(result(game_state, _action, num_ghosts), depth - 1))
             return v
 
         def terminal_test(game_state, depth):
             """:return True if we are at a leaf or at depth, False otherwise"""
-            if game_state.getLegalActions(self.index) == 0 or depth == 0:
+            if len(game_state.getLegalActions(self.index)) == 0 or depth == 0:
                 return True
             return False
 
         def result(game_state, _action, index):
             return game_state.generateSuccessor(index, _action)
 
+        # TODO: could we not just call max_value once?
+
         best_score = -float('inf')
         best_index = 0
         action_table = gameState.getLegalActions(self.index)
         for i, action in enumerate(action_table):
-            utility = min_value(result(gameState, action, self.index), self.depth, gameState.getNumAgents()-1)
+            utility = min_value(result(gameState, action, self.index), self.depth, gameState.getNumAgents() - 1)
             if utility > best_score:
                 best_score = utility
                 best_index = i
