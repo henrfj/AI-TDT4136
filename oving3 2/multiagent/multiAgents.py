@@ -18,6 +18,7 @@ import random, util
 
 from game import Agent
 
+
 class ReflexAgent(Agent):
     """
       A reflex agent chooses an action at each choice point by examining
@@ -76,6 +77,7 @@ class ReflexAgent(Agent):
         "*** YOUR CODE HERE ***"
         return successorGameState.getScore()
 
+
 def scoreEvaluationFunction(currentGameState):
     """
       This default evaluation function just returns the score of the state.
@@ -85,6 +87,7 @@ def scoreEvaluationFunction(currentGameState):
       (not reflex agents).
     """
     return currentGameState.getScore()
+
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -155,9 +158,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 v = max(v, min_value(result(game_state, _action, self.index), depth, 1))
             return v
 
-
-        # WE MAKE CHANGES
-
         def min_value(game_state, depth, ghost_index):
             """
             Return a utility value, minimizing utility of the recursive tree below itself.
@@ -209,7 +209,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
             return game_state.generateSuccessor(index, _action)
 
         # Now we must find the best action from our current position
-
+        # All code below this is really just max_value() implemented to also return the index
+        # of the action, providing the best utility.
         best_score = -float('inf')
         best_index = 0
         action_table = gameState.getLegalActions(self.index)
@@ -228,53 +229,129 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
-    def alphabeta(self, state, index, cdepth, alpha, beta):
-        if index == self.index:
-            cdepth = cdepth + 1
-        if cdepth == self.depth:
-            return self.evaluationFunction(state)
-
-        actions = state.getLegalActions(index)
-        if len(actions) == 0:
-            return self.evaluationFunction(state)
-        if index == 0:
-            value = -float("inf")
-            for action in actions:
-                value = max(value, self.alphabeta(state.generateSuccessor(index, action), (index + 1) % state.getNumAgents(), cdepth, alpha, beta))
-                if value > beta:
-                    return value
-                alpha = max(alpha, value)
-            return value
-        value = float("inf")
-        for action in actions:
-            value = min(value, self.alphabeta(state.generateSuccessor(index, action), (index + 1) % state.getNumAgents(), cdepth, alpha, beta))
-            if value < alpha:
-                return value
-            beta = min(beta, value)
-        return value
 
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        aindex = -1
-        actions = gameState.getLegalActions(self.index)
-        alpha = -float("inf")
-        beta = float("inf")
-        value = -float("inf")
-        for i in range(0, len(actions)):
-            action = actions[i]
-            nextval = self.alphabeta(gameState.generateSuccessor(self.index, action), (self.index + 1) % gameState.getNumAgents(), 0, alpha, beta)
-            if nextval > value:
-                value = nextval
-                aindex = i
-            alpha = max(alpha, value)
+        def max_value(game_state, depth, alpha, beta):
+            """
+            Returns a utility value, maximizing the utility of the recursive tree below itself.
+            This function represents PacMan, and he always chooses the move to provide himself
+            best possible utility.
+            :param game_state: current game situation
+            :param depth: how deep we currently are in the search tree, reduced by one
+            for every call of max_value
+            :param alpha: the best choice we have found so far along the Max path
+            :param beta: the best choice we have found so far along the Min path
+            :return: a utility value
+            """
 
-        return actions[aindex]
+            # Checks if we have reached a leaf node, or at max depth
+            if terminal_test(game_state, depth, self.index):
+                return self.evaluationFunction(game_state)
 
+            # Goes through the recursive tree below by predicting how actions affect the gameState.
+            # End up with a value v, being the maximum utility we can get from the below tree
+            v = - float('inf')
+            for _action in game_state.getLegalActions(self.index):
+                # game_state.getNumAgents() -1 will give the number of ghosts
+                v = max(v, min_value(result(game_state, _action, self.index), depth, 1, alpha, beta))
+                # IF we have already found a node bigger than our "best min-path",
+                # there is no need to look further and we can return
+                if v > beta:
+                    return v
+                # Update alpha value in case we have found a better choice for Max-path
+                alpha = max(alpha, v)
+            return v
 
+        def min_value(game_state, depth, ghost_index, alpha, beta):
+            """
+            Return a utility value, minimizing utility of the recursive tree below itself.
+            We call this function recursively for every ghost before calling the max_value
+            :param game_state: current situation of the game
+            :param depth: how deep we currently are in the search tree
+            :param ghost_index: number of times we need to call min_value before calling max_value
+            :param alpha: the best choice we have found so far along the Max path
+            :param beta: the best choice we have found so far along the Min path
+            :return: a utility value
+            """
+            # Checks if we have reached a leaf node
+            if terminal_test(game_state, depth, ghost_index):
+                return self.evaluationFunction(game_state)
 
+            v = float('inf')
+            if ghost_index != game_state.getNumAgents() - 1:
+                # As long as we aren't the last ghost to be evaluated,
+                # we will call min_value for the next gameState(s) as
+                # a ghost will take action after us
+                for _action in game_state.getLegalActions(ghost_index):
+                    v = min(v, min_value(result(game_state, _action, ghost_index), depth, ghost_index + 1, alpha, beta))
+                    # If we have already found a node bigger than our "best max-path",
+                    # there is no need to look further and we can return
+                    if v < alpha:
+                        return v
+                    # Update beta value in case we have found a better choice for Min-path
+                    beta = min(beta, v)
+            else:
+                # Now a PacMan will take action after us, and we know PacMan always maximizes
+                # his utility, therefor we call max_value on the next gameState(s)
+                for _action in game_state.getLegalActions(ghost_index):  # num_ghost is always 1 here
+                    v = min(v, max_value(result(game_state, _action, ghost_index), depth - 1, alpha, beta))
+                    # If we have already found a node bigger than our "best max-path",
+                    # there is no need to look further and we can return
+                    if v < alpha:
+                        return v
+                    # Update beta value in case we have found a better choice for Min-path
+                    beta = min(beta, v)
+            return v
+
+        def terminal_test(game_state, depth, index):
+            """
+            Tests if we are at a terminal node and needs to return its utility
+            :param game_state: current situation of the game
+            :param depth: How deep we currently are in the search tree
+            :param index: To test legal move of the current character
+            :return: True if we are at a leaf, or at max depth, False if we can go on
+            """
+            if len(game_state.getLegalActions(index)) == 0 or depth == 0:
+                return True
+            return False
+
+        # Generates a successor state for each call
+        def result(game_state, _action, index):
+            """
+            Calculates the next situation of the game-board
+            :param game_state: the current situation of the game
+            :param _action: the move to be done
+            :param index: the agent about to do this move
+            :return: the next game situation after the move is concluded
+            """
+            return game_state.generateSuccessor(index, _action)
+
+        # Now we must find the best action from our current position
+        # All code below this is really just max_value() implemented to also return the index
+        # of the action, providing the best utility.
+        best_score = -float('inf')
+        best_index = 0
+        action_table = gameState.getLegalActions(self.index)
+        init_alpha = -float('inf')
+        init_beta = float('inf')
+
+        for i, action in enumerate(action_table):
+            # input integer 1 below represent ghost index. We first evaluate ghost at index 1
+            utility = min_value(result(gameState, action, self.index),
+                                self.depth,
+                                1,
+                                init_alpha,
+                                init_beta)
+            if utility > best_score:
+                best_score = utility
+                best_index = i
+            init_alpha = max(init_alpha, utility)
+
+        return action_table[best_index]
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
