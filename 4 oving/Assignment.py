@@ -333,6 +333,9 @@ def main():
             try:
                 csp = create_sudoku_csp(file)
                 start_time = time.time()
+                print("______Problem______")
+                print_sudoku_solution(csp.domains)
+                print("______Solution______")
                 solution = csp.backtracking_search()
                 elapsed_time = time.time() - start_time
                 print_sudoku_solution(solution)
