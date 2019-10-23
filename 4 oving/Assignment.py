@@ -94,6 +94,8 @@ class CSP:
         been decided, and a list of only a single value for the
         variables that *have* been decided.
 
+        ^^ Is it tho? Don't we simply remove vales from the assignment as we go?
+
         When all of the variables in 'assignment' have lists of length
         one, i.e. when all variables have been assigned a value, the
         function should return 'assignment'. Otherwise, the search
@@ -108,17 +110,35 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        if self.complete(assignment):
+            return assignment
 
-    def select_unassigned_variable(self, assignment):
+        # Select an unfinished variable
+        var = self.select_unassigned_variable(assignment)
+
+        # Iterate through all possible values of the variable
+        for value in assignment[var]:
+            pass
+
+    @staticmethod
+    def complete(assignment):
+        for key in assignment:
+            if len(assignment[key]) != 1:
+                return False
+        return True
+
+    @staticmethod
+    def select_unassigned_variable(assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
         in the textbook. Should return the name of one of the variables
         in 'assignment' that have not yet been decided, i.e. whose list
         of legal values has a length greater than one.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        for key in assignment:
+            # Just returns the first and best
+            if len(assignment[key]) > 1:
+                return key
+        return None
 
     def inference(self, assignment, queue):
         """The function 'AC-3' from the pseudocode in the textbook.
@@ -126,20 +146,67 @@ class CSP:
         the lists of legal values for each undecided variable. 'queue'
         is the initial queue of arcs that should be visited.
         """
-        # TODO: IMPLEMENT THIS
-        pass
 
-    def revise(self, assignment, i, j):
+        # Assumed: Queue is an array of 2-tuples with variable names
+
+        while queue:
+            # Queue is an array of 2-tuples with variable names; (var_1, var_2)
+            arc = queue.pop(0)
+            var_1 = arc[0]
+            var_2 = arc[1]
+
+            if self.revise(assignment, var_1, var_2):
+
+                # If var1's domain is empty, it is arc-inconsistent
+                if len(assignment[var_1]) == 0:
+                    return False
+
+                # Will be an array of tuples: [(var_new, var_1), ...]
+                neighbours = self.get_all_neighboring_arcs(var_1)
+
+                for neighbour_tuple in neighbours:
+                    # No need to add the tuple we are currently inspecting
+                    if neighbour_tuple[0] != var_2:
+                        queue.append(neighbour_tuple)
+        # If we still haven't found an empty domain, we are still arc consistent
+        return True
+
+    def revise(self, assignment, var_1, var_2):
         """The function 'Revise' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
-        the lists of legal values for each undecided variable. 'i' and
-        'j' specifies the arc that should be visited. If a value is
-        found in variable i's domain that doesn't satisfy the constraint
-        between i and j, the value should be deleted from i's list of
+        the lists of legal values for each undecided variable. 'var_1' and
+        'var_2' specifies the arc that should be visited.
+        If a value is
+        found in var_1's domain that doesn't satisfy the constraint
+        between var_1 and var_2, the value should be deleted from var_1's list of
         legal values in 'assignment'.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+
+        # TODO: might be a problem that we only check one directionally:
+        #  We only check if (var_1, var_2) satisfies the demands,
+        #  and not te other way around
+
+        # Informing us if the current domain has been revised or not
+        revised = False
+
+        # Temporary storage of the domains
+        domain_1 = assignment[var_1]
+        domain_2 = assignment[var_2]
+
+        for val_1 in domain_1:
+            # Will check if any val_2 in domain_2 satisfies the constraints
+            no_value_satisfies = True
+            for val_2 in domain_2:
+                # Constraints are a set of legal values for var_1 and var_2
+                if (val_1, val_2) in self.constraints[var_1][var_2]:
+                    # If we find a val_2 to satisfy the constraints
+                    no_value_satisfies = False
+
+            if no_value_satisfies:
+                assignment[var_1].remove(val_1)
+                revised = True
+
+        return revised
 
 
 def create_map_coloring_csp():
@@ -209,3 +276,19 @@ def print_sudoku_solution(solution):
         print("")
         if row == 2 or row == 5:
             print('------+-------+------')
+
+
+def main():
+    # 1: What is returned
+    csp_test = create_map_coloring_csp()
+    arr1 = csp_test.get_all_arcs()
+    print(arr1)
+    arr2 = csp_test.get_all_neighboring_arcs('SA')
+    print(arr2)
+
+    # 2: How does the assignment look like?
+    assignment = copy.deepcopy(csp_test.domains)
+    print(assignment)
+
+
+main()
