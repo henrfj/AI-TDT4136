@@ -1,6 +1,6 @@
 import copy
 import itertools
-
+import time
 
 class CSP:
     def __init__(self):
@@ -13,6 +13,12 @@ class CSP:
         # self.constraints[i][j] is a list of legal value pairs for
         # the variable pair (i, j)
         self.constraints = {}
+
+        # Number of backtracks done in CSP.backtracking_search()
+        self.backtracks = 0
+
+        # Number of failed backtracks done in CSP.backtracking_search()
+        self.failed_backtracks = 0
 
     def add_variable(self, name, domain):
         """Add a new variable to the CSP. 'name' is the variable name
@@ -110,6 +116,9 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
+        # Counting number of times this function is called
+        self.backtracks += 1
+
         if self.complete(assignment):
             return assignment
 
@@ -130,9 +139,11 @@ class CSP:
                 # As long as inference doesn't fail, we run backtrack recursively
                 result = self.backtrack(assignment_copy)
                 if result:
+                    # As long as the backtrack didn't fail, we return it
                     return result
 
         # Every time backtrack fails, we end up here
+        self.failed_backtracks += 1
         return None
 
     @staticmethod
@@ -298,8 +309,7 @@ def main():
 
     while choice != "0":
         print("___________________________")
-        choice = input("1: Test some functions\n2: Closer look at an 'assignment'\n3:Testing sudoku\n___________________________\nInput: ")
-
+        choice = input("0: exit\n1: Test some functions\n2: Closer look at an 'assignment'\n3: Testing sudoku\n___________________________\nInput: ")
 
         if choice == "0":
             exit()
@@ -322,8 +332,13 @@ def main():
             file += ".txt"
             try:
                 csp = create_sudoku_csp(file)
+                start_time = time.time()
                 solution = csp.backtracking_search()
+                elapsed_time = time.time() - start_time
                 print_sudoku_solution(solution)
+                print("--------------\nNumber of backtracks and backtrack-fails:\t",
+                      csp.backtracks, "\t", csp.failed_backtracks)
+                print("--------------\nTime to complete:\t", round(elapsed_time, 2), " second.")
             except FileNotFoundError:
                 print("Could find the board...")
 
