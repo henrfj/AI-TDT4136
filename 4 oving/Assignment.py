@@ -118,7 +118,22 @@ class CSP:
 
         # Iterate through all possible values of the variable
         for value in assignment[var]:
-            pass
+
+            # Make a deep copy before we change it, so we can return to clean slate if it fails
+            assignment_copy = copy.deepcopy(assignment)
+
+            # Setting a variable to a value, as a proposed solution.
+            assignment_copy[var] = value
+
+            # Run inference on this proposed solution.
+            if self.inference(assignment_copy, self.get_all_arcs()):
+                # As long as inference doesn't fail, we run backtrack recursively
+                result = self.backtrack(assignment_copy)
+                if result:
+                    return result
+
+        # Every time backtrack fails, we end up here
+        return None
 
     @staticmethod
     def complete(assignment):
@@ -279,16 +294,38 @@ def print_sudoku_solution(solution):
 
 
 def main():
-    # 1: What is returned
-    csp_test = create_map_coloring_csp()
-    arr1 = csp_test.get_all_arcs()
-    print(arr1)
-    arr2 = csp_test.get_all_neighboring_arcs('SA')
-    print(arr2)
+    choice = ""
 
-    # 2: How does the assignment look like?
-    assignment = copy.deepcopy(csp_test.domains)
-    print(assignment)
+    while choice != "0":
+        print("___________________________")
+        choice = input("1: Test some functions\n2: Closer look at an 'assignment'\n3:Testing sudoku\n___________________________\nInput: ")
+
+
+        if choice == "0":
+            exit()
+        elif choice == "1":
+            # 1: What is returned
+            csp_test = create_map_coloring_csp()
+            arr1 = csp_test.get_all_arcs()
+            print(arr1)
+            arr2 = csp_test.get_all_neighboring_arcs('SA')
+            print(arr2)
+        elif choice == "2":
+            # 2: How does the assignment look like?
+            csp_test = create_map_coloring_csp()
+            assignment = copy.deepcopy(csp_test.domains)
+            print(assignment)
+        elif choice == "3":
+            # 3: Go time
+
+            file = input("Enter what board you will test: ")
+            file += ".txt"
+            try:
+                csp = create_sudoku_csp(file)
+                solution = csp.backtracking_search()
+                print_sudoku_solution(solution)
+            except FileNotFoundError:
+                print("Could find the board...")
 
 
 main()
